@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ピザ分数ゲーム</title>
+<style>
+body{
+    font-family:sans-serif;
+    text-align:center;
+    background:#fff3e0;
+}
+h1{
+    color:#d84315;
+}
+#pizza{
+    width:300px;
+    height:300px;
+    border-radius:50%;
+    margin:20px auto;
+    position:relative;
+    background:
+    conic-gradient(
+        #ffcc80 0deg 90deg,
+        #ffe0b2 90deg 180deg,
+        #ffcc80 180deg 270deg,
+        #ffe0b2 270deg 360deg
+    );
+    border:10px solid #bf360c;
+}
+.slice{
+    position:absolute;
+    width:4px;
+    height:300px;
+    background:white;
+    left:148px;
+    top:0;
+    transform-origin:center;
+}
+button{
+    padding:10px 20px;
+    font-size:18px;
+    margin:10px;
+}
+#msg{
+    font-size:24px;
+    margin-top:10px;
+}
+</style>
+</head>
+<body>
+
+<h1>🍕 ピザ分数ゲーム</h1>
+<p id="question"></p>
+
+<div id="pizza"></div>
+
+<button onclick="answer(2)">2等分</button>
+<button onclick="answer(4)">4等分</button>
+<button onclick="answer(8)">8等分</button>
+
+<div id="msg"></div>
+
+<script>
+const pizza = document.getElementById("pizza");
+const question = document.getElementById("question");
+const msg = document.getElementById("msg");
+
+let current = 2;
+
+function drawPizza(parts){
+    pizza.innerHTML = "";
+
+    for(let i=0;i<parts;i++){
+        const line = document.createElement("div");
+        line.className = "slice";
+        line.style.transform = `rotate(${360/parts*i}deg)`;
+        pizza.appendChild(line);
+    }
+}
+
+function nextQuestion(){
+    const arr=[2,4,8];
+    current = arr[Math.floor(Math.random()*arr.length)];
+    question.textContent = `「1/${current}」になるように切ろう！`;
+}
+
+function answer(num){
+    drawPizza(num);
+
+    if(num===current){
+        msg.textContent="⭕ 正解！";
+    }else{
+        msg.textContent="❌ ちがう！";
+    }
+
+    setTimeout(nextQuestion,1000);
+}
+
+drawPizza(4);
+nextQuestion();
+</script>
+
+</body>
+</html>
