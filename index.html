@@ -5,101 +5,509 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ピザ分数ゲーム</title>
 <style>
+:root{
+    --sauce:#d84315;
+    --crust:#8d3f12;
+    --cheese:#ffcf7d;
+    --slice:#fff1c9;
+    --answer:#e53935;
+    --panel:#ffffff;
+    --ink:#3d2314;
+}
+*{
+    box-sizing:border-box;
+}
 body{
-    font-family:sans-serif;
+    margin:0;
+    min-height:100vh;
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
     text-align:center;
-    background:#fff3e0;
+    color:var(--ink);
+    background:linear-gradient(180deg,#fff8e6 0%,#ffe2b5 100%);
+}
+main{
+    width:min(920px,100%);
+    margin:0 auto;
+    padding:24px 16px 36px;
 }
 h1{
-    color:#d84315;
+    margin:0 0 8px;
+    color:var(--sauce);
+    font-size:clamp(28px,6vw,44px);
 }
-#pizza{
-    width:300px;
-    height:300px;
+.lead{
+    margin:0 auto 18px;
+    max-width:620px;
+    font-size:18px;
+    line-height:1.6;
+}
+.game{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    gap:16px;
+}
+.mode-tabs{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:10px;
+    margin:0 0 16px;
+}
+.mode-tab{
+    background:#2e7d32;
+    box-shadow:0 4px 0 #1b5e20;
+}
+.mode-tab[aria-selected="true"]{
+    background:var(--sauce);
+    box-shadow:0 4px 0 #9f2f0f;
+}
+.mode-panel[hidden]{
+    display:none;
+}
+.board{
+    padding:18px;
+    background:rgba(255,255,255,.8);
+    border:2px solid rgba(141,63,18,.18);
+    border-radius:8px;
+}
+#question{
+    min-height:42px;
+    margin:0 0 14px;
+    font-size:clamp(22px,5vw,32px);
+    font-weight:800;
+}
+.pizza-row{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:18px;
+    align-items:center;
+}
+.pizza-card{
+    min-width:0;
+}
+.pizza-label{
+    min-height:34px;
+    margin:0 0 8px;
+    font-size:22px;
+    font-weight:800;
+}
+.pizza{
+    width:min(300px,78vw);
+    aspect-ratio:1;
     border-radius:50%;
-    margin:20px auto;
+    margin:0 auto;
     position:relative;
-    background:
-    conic-gradient(
-        #ffcc80 0deg 90deg,
-        #ffe0b2 90deg 180deg,
-        #ffcc80 180deg 270deg,
-        #ffe0b2 270deg 360deg
-    );
-    border:10px solid #bf360c;
+    overflow:hidden;
+    background:var(--cheese);
+    border:10px solid var(--crust);
+    box-shadow:0 10px 24px rgba(95,44,13,.18);
 }
-.slice{
+.pizza.touchable{
+    cursor:pointer;
+    touch-action:manipulation;
+}
+.pizza::after{
+    content:"";
+    position:absolute;
+    inset:10%;
+    border-radius:50%;
+    background:
+        radial-gradient(circle at 28% 34%,#c62828 0 5%,transparent 5.5%),
+        radial-gradient(circle at 64% 28%,#c62828 0 4.5%,transparent 5%),
+        radial-gradient(circle at 46% 62%,#c62828 0 5.5%,transparent 6%),
+        radial-gradient(circle at 72% 68%,#c62828 0 4%,transparent 4.5%);
+    pointer-events:none;
+}
+.slice-line{
     position:absolute;
     width:4px;
-    height:300px;
-    background:white;
-    left:148px;
+    height:100%;
+    background:rgba(255,255,255,.9);
+    left:calc(50% - 2px);
     top:0;
     transform-origin:center;
+    z-index:2;
+}
+.free-layout{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:18px;
+    align-items:start;
+}
+.free-tools{
+    display:grid;
+    gap:12px;
+}
+.tool-title{
+    margin:0;
+    font-size:20px;
+    font-weight:800;
+}
+.free-summary{
+    min-height:76px;
+    margin:0;
+    padding:12px;
+    border-radius:8px;
+    background:#fff8e1;
+    font-size:22px;
+    font-weight:800;
+    line-height:1.45;
+}
+.controls{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(118px,1fr));
+    gap:10px;
 }
 button{
-    padding:10px 20px;
-    font-size:18px;
-    margin:10px;
+    min-height:54px;
+    padding:10px 12px;
+    border:0;
+    border-radius:8px;
+    color:white;
+    background:var(--sauce);
+    font-size:20px;
+    font-weight:800;
+    cursor:pointer;
+    box-shadow:0 4px 0 #9f2f0f;
+}
+button:hover{
+    filter:brightness(1.08);
+}
+button:focus-visible{
+    outline:4px solid #1976d2;
+    outline-offset:3px;
+}
+button:active{
+    transform:translateY(2px);
+    box-shadow:0 2px 0 #9f2f0f;
 }
 #msg{
-    font-size:24px;
-    margin-top:10px;
+    min-height:72px;
+    margin:8px 0 0;
+    font-size:clamp(20px,4.5vw,30px);
+    font-weight:800;
+    line-height:1.4;
+}
+.hint{
+    margin:0;
+    padding:14px;
+    background:var(--panel);
+    border-left:8px solid #43a047;
+    border-radius:8px;
+    font-size:18px;
+    line-height:1.7;
+    text-align:left;
+}
+.fraction{
+    display:inline-block;
+    min-width:2.7em;
+    padding:.1em .25em;
+    color:var(--sauce);
+    font-weight:900;
+}
+@media (min-width:760px){
+    .pizza-row{
+        grid-template-columns:1fr 1fr;
+    }
+    .free-layout{
+        grid-template-columns:1fr minmax(260px,.8fr);
+    }
 }
 </style>
 </head>
 <body>
+<main>
+    <h1>ピザ分数ゲーム</h1>
+    <p class="lead">同じ大きさのピザを見比べて、形がちがっても「同じ量」になる分数を見つけよう。</p>
 
-<h1>🍕 ピザ分数ゲーム</h1>
-<p id="question"></p>
+    <section class="game" aria-label="分数を比べるゲーム">
+        <div class="mode-tabs" role="tablist" aria-label="遊び方を選ぶ">
+            <button id="quizModeButton" class="mode-tab" type="button" role="tab" aria-selected="true" aria-controls="quizMode">分数クイズ</button>
+            <button id="freeModeButton" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="freeMode">自由体験</button>
+        </div>
 
-<div id="pizza"></div>
+        <div id="quizMode" class="mode-panel board" role="tabpanel" aria-labelledby="quizModeButton">
+            <p id="question"></p>
+            <div class="pizza-row">
+                <div class="pizza-card">
+                    <p class="pizza-label">お題</p>
+                    <div id="targetPizza" class="pizza" aria-label="お題のピザ"></div>
+                </div>
+                <div class="pizza-card">
+                    <p id="answerLabel" class="pizza-label">答えを選ぼう</p>
+                    <div id="answerPizza" class="pizza" aria-label="選んだ答えのピザ"></div>
+                </div>
+            </div>
+            <p id="msg" aria-live="polite"></p>
+        </div>
 
-<button onclick="answer(2)">2等分</button>
-<button onclick="answer(4)">4等分</button>
-<button onclick="answer(8)">8等分</button>
+        <div id="choices" class="mode-panel controls" aria-label="答えの選択肢"></div>
 
-<div id="msg"></div>
+        <div id="freeMode" class="mode-panel board" role="tabpanel" aria-labelledby="freeModeButton" hidden>
+            <div class="free-layout">
+                <div class="pizza-card">
+                    <p class="pizza-label">自由にタッチ</p>
+                    <div id="freePizza" class="pizza touchable" role="button" tabindex="0" aria-label="自由体験のピザ"></div>
+                </div>
+                <div class="free-tools">
+                    <p class="tool-title">何等分にする？</p>
+                    <div id="partChoices" class="controls" aria-label="分ける数"></div>
+                    <p id="freeSummary" class="free-summary" aria-live="polite"></p>
+                    <button id="resetFreeButton" type="button">選びなおす</button>
+                </div>
+            </div>
+        </div>
+
+        <p id="quizHint" class="mode-panel hint">
+            ポイント: <span class="fraction">1/2</span> はピザの半分。
+            <span class="fraction">2/4</span> も、<span class="fraction">4/8</span> も、色のついた量は同じ半分です。
+        </p>
+        <p id="freeHint" class="mode-panel hint" hidden>
+            ピザをひと切れずつタッチすると赤くなります。赤い数が分子、分けた数が分母です。
+        </p>
+    </section>
+</main>
 
 <script>
-const pizza = document.getElementById("pizza");
+const quizModeButton = document.getElementById("quizModeButton");
+const freeModeButton = document.getElementById("freeModeButton");
+const quizMode = document.getElementById("quizMode");
+const freeMode = document.getElementById("freeMode");
+const targetPizza = document.getElementById("targetPizza");
+const answerPizza = document.getElementById("answerPizza");
+const freePizza = document.getElementById("freePizza");
 const question = document.getElementById("question");
+const choices = document.getElementById("choices");
+const partChoices = document.getElementById("partChoices");
 const msg = document.getElementById("msg");
+const answerLabel = document.getElementById("answerLabel");
+const freeSummary = document.getElementById("freeSummary");
+const resetFreeButton = document.getElementById("resetFreeButton");
+const quizHint = document.getElementById("quizHint");
+const freeHint = document.getElementById("freeHint");
 
-let current = 2;
+const questions = [
+    { numerator:1, denominator:2, answers:[[2,4],[3,4],[1,4]] },
+    { numerator:2, denominator:4, answers:[[1,2],[1,4],[3,8]] },
+    { numerator:4, denominator:8, answers:[[1,2],[2,8],[3,4]] },
+    { numerator:1, denominator:4, answers:[[2,8],[1,2],[3,4]] },
+    { numerator:3, denominator:4, answers:[[6,8],[1,2],[2,4]] }
+];
 
-function drawPizza(parts){
-    pizza.innerHTML = "";
+let currentQuestion = questions[0];
+let nextTimerId = 0;
+let freeParts = 4;
+let selectedSlices = new Set();
 
-    for(let i=0;i<parts;i++){
+function gcd(left, right){
+    let a = Math.abs(left);
+    let b = Math.abs(right);
+
+    while(b !== 0){
+        const next = a % b;
+        a = b;
+        b = next;
+    }
+
+    return a || 1;
+}
+
+function sameFraction(leftNumerator, leftDenominator, rightNumerator, rightDenominator){
+    return leftNumerator * rightDenominator === rightNumerator * leftDenominator;
+}
+
+function fractionText(numerator, denominator){
+    return `${numerator}/${denominator}`;
+}
+
+function simplifiedText(numerator, denominator){
+    const divisor = gcd(numerator, denominator);
+    return fractionText(numerator / divisor, denominator / divisor);
+}
+
+function drawPizza(pizzaElement, numerator, denominator){
+    const clampedNumerator = Math.max(0, Math.min(numerator, denominator));
+    const filledDegrees = 360 * (clampedNumerator / denominator);
+    const background = filledDegrees === 360
+        ? "var(--answer)"
+        : `conic-gradient(var(--answer) 0deg ${filledDegrees}deg, var(--slice) ${filledDegrees}deg 360deg)`;
+    const lines = [];
+
+    pizzaElement.style.background = background;
+
+    for(let index = 0; index < denominator; index += 1){
         const line = document.createElement("div");
-        line.className = "slice";
-        line.style.transform = `rotate(${360/parts*i}deg)`;
-        pizza.appendChild(line);
+        line.className = "slice-line";
+        line.style.transform = `rotate(${(360 / denominator) * index}deg)`;
+        lines.push(line);
     }
+
+    pizzaElement.replaceChildren(...lines);
 }
 
-function nextQuestion(){
-    const arr=[2,4,8];
-    current = arr[Math.floor(Math.random()*arr.length)];
-    question.textContent = `「1/${current}」になるように切ろう！`;
+function drawSelectedPizza(pizzaElement, denominator, selectedIndexes){
+    const oneSlice = 360 / denominator;
+    const segments = [];
+    const lines = [];
+
+    for(let index = 0; index < denominator; index += 1){
+        const color = selectedIndexes.has(index) ? "var(--answer)" : "var(--slice)";
+        segments.push(`${color} ${oneSlice * index}deg ${oneSlice * (index + 1)}deg`);
+
+        const line = document.createElement("div");
+        line.className = "slice-line";
+        line.style.transform = `rotate(${oneSlice * index}deg)`;
+        lines.push(line);
+    }
+
+    pizzaElement.style.background = `conic-gradient(${segments.join(", ")})`;
+    pizzaElement.replaceChildren(...lines);
 }
 
-function answer(num){
-    drawPizza(num);
+function shuffle(items){
+    const copied = [...items];
 
-    if(num===current){
-        msg.textContent="⭕ 正解！";
+    for(let index = copied.length - 1; index > 0; index -= 1){
+        const nextIndex = Math.floor(Math.random() * (index + 1));
+        [copied[index], copied[nextIndex]] = [copied[nextIndex], copied[index]];
+    }
+
+    return copied;
+}
+
+function setMode(mode){
+    const isQuiz = mode === "quiz";
+
+    quizMode.hidden = !isQuiz;
+    choices.hidden = !isQuiz;
+    quizHint.hidden = !isQuiz;
+    freeMode.hidden = isQuiz;
+    freeHint.hidden = isQuiz;
+    quizModeButton.setAttribute("aria-selected", String(isQuiz));
+    freeModeButton.setAttribute("aria-selected", String(!isQuiz));
+
+    if(isQuiz){
+        showQuestion();
+        return;
+    }
+
+    window.clearTimeout(nextTimerId);
+    msg.textContent = "";
+    updateFreePizza();
+}
+
+function showQuestion(){
+    window.clearTimeout(nextTimerId);
+    currentQuestion = questions[Math.floor(Math.random() * questions.length)];
+
+    const { numerator, denominator, answers } = currentQuestion;
+    question.textContent = `${fractionText(numerator, denominator)} と同じ量のピザはどれ？`;
+    msg.textContent = "";
+    answerLabel.textContent = "答えを選ぼう";
+
+    drawPizza(targetPizza, numerator, denominator);
+    drawPizza(answerPizza, 0, 1);
+
+    const buttons = shuffle(answers).map(([answerNumerator, answerDenominator]) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = fractionText(answerNumerator, answerDenominator);
+        button.addEventListener("click", () => answer(answerNumerator, answerDenominator));
+        return button;
+    });
+
+    choices.replaceChildren(...buttons);
+}
+
+function updateFreePizza(){
+    const selectedCount = selectedSlices.size;
+    drawSelectedPizza(freePizza, freeParts, selectedSlices);
+
+    if(selectedCount === 0){
+        freeSummary.textContent = `${freeParts}等分のピザ。ひと切れずつタッチしてみよう。`;
+        return;
+    }
+
+    freeSummary.textContent = `${freeParts}個のうち${selectedCount}個を選んだよ。分数は ${fractionText(selectedCount, freeParts)}、約分すると ${simplifiedText(selectedCount, freeParts)}。`;
+}
+
+function setFreeParts(parts){
+    freeParts = parts;
+    selectedSlices = new Set();
+    updateFreePizza();
+}
+
+function toggleFreeSlice(event){
+    const rect = freePizza.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const pointX = event.clientX - centerX;
+    const pointY = event.clientY - centerY;
+    const distance = Math.hypot(pointX, pointY);
+
+    if(distance > rect.width / 2){
+        return;
+    }
+
+    const angle = (Math.atan2(pointY, pointX) * 180 / Math.PI + 450) % 360;
+    const sliceIndex = Math.floor(angle / (360 / freeParts));
+
+    if(selectedSlices.has(sliceIndex)){
+        selectedSlices.delete(sliceIndex);
     }else{
-        msg.textContent="❌ ちがう！";
+        selectedSlices.add(sliceIndex);
     }
 
-    setTimeout(nextQuestion,1000);
+    updateFreePizza();
 }
 
-drawPizza(4);
-nextQuestion();
-</script>
+function answer(numerator, denominator){
+    const target = currentQuestion;
+    const isCorrect = sameFraction(target.numerator, target.denominator, numerator, denominator);
 
+    drawPizza(answerPizza, numerator, denominator);
+    answerLabel.textContent = `選んだ答え: ${fractionText(numerator, denominator)}`;
+
+    if(isCorrect){
+        msg.textContent = `正解！ ${fractionText(numerator, denominator)} は ${simplifiedText(numerator, denominator)}。同じ量だね。`;
+        nextTimerId = window.setTimeout(showQuestion, 1800);
+        return;
+    }
+
+    msg.textContent = `もう一回！ 色のついたピザの量を見比べてみよう。`;
+}
+
+quizModeButton.addEventListener("click", () => setMode("quiz"));
+freeModeButton.addEventListener("click", () => setMode("free"));
+freePizza.addEventListener("click", toggleFreeSlice);
+freePizza.addEventListener("keydown", (event) => {
+    if(event.key === "Enter" || event.key === " "){
+        event.preventDefault();
+        const firstUnselected = [...Array(freeParts).keys()].find((index) => !selectedSlices.has(index));
+
+        if(firstUnselected === undefined){
+            selectedSlices.clear();
+        }else{
+            selectedSlices.add(firstUnselected);
+        }
+
+        updateFreePizza();
+    }
+});
+resetFreeButton.addEventListener("click", () => {
+    selectedSlices.clear();
+    updateFreePizza();
+});
+
+[2,3,4,6,8].forEach((parts) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = `${parts}等分`;
+    button.addEventListener("click", () => setFreeParts(parts));
+    partChoices.appendChild(button);
+});
+
+showQuestion();
+updateFreePizza();
+</script>
 </body>
 </html>
