@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -11,6 +12,7 @@
     --cheese:#ffcf7d;
     --slice:#fff1c9;
     --answer:#e53935;
+    --answer-light:#ff8a80;
     --panel:#ffffff;
     --ink:#3d2314;
 }
@@ -45,10 +47,11 @@ h1{
     display:grid;
     grid-template-columns:minmax(0,1fr);
     gap:16px;
+    align-items:start;
 }
 .mode-tabs{
     display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-columns:repeat(3,minmax(0,1fr));
     gap:10px;
     margin:0 0 16px;
 }
@@ -152,6 +155,35 @@ h1{
     font-weight:800;
     line-height:1.45;
 }
+.calc-problem{
+    min-height:42px;
+    margin:0 0 14px;
+    font-size:clamp(22px,5vw,32px);
+    font-weight:800;
+}
+.calc-row{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:18px;
+    align-items:center;
+}
+.mini-pizza{
+    width:min(230px,70vw);
+}
+.calc-sign{
+    min-height:34px;
+    margin:0;
+    color:var(--sauce);
+    font-size:34px;
+    font-weight:900;
+}
+.calc-result{
+    min-height:72px;
+    margin:10px 0 0;
+    font-size:clamp(20px,4.5vw,30px);
+    font-weight:800;
+    line-height:1.4;
+}
 .controls{
     display:grid;
     grid-template-columns:repeat(auto-fit,minmax(118px,1fr));
@@ -208,6 +240,9 @@ button:active{
     .pizza-row{
         grid-template-columns:1fr 1fr;
     }
+    .calc-row{
+        grid-template-columns:1fr auto 1fr auto 1fr;
+    }
     .free-layout{
         grid-template-columns:1fr minmax(260px,.8fr);
     }
@@ -223,6 +258,7 @@ button:active{
         <div class="mode-tabs" role="tablist" aria-label="遊び方を選ぶ">
             <button id="quizModeButton" class="mode-tab" type="button" role="tab" aria-selected="true" aria-controls="quizMode">分数クイズ</button>
             <button id="freeModeButton" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="freeMode">自由体験</button>
+            <button id="calcModeButton" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="calcMode">たし算・ひき算</button>
         </div>
 
         <div id="quizMode" class="mode-panel board" role="tabpanel" aria-labelledby="quizModeButton">
@@ -257,6 +293,29 @@ button:active{
             </div>
         </div>
 
+        <div id="calcMode" class="mode-panel board" role="tabpanel" aria-labelledby="calcModeButton" hidden>
+            <p id="calcProblem" class="calc-problem"></p>
+            <div class="calc-row">
+                <div class="pizza-card">
+                    <p id="calcLeftLabel" class="pizza-label"></p>
+                    <div id="calcLeftPizza" class="pizza mini-pizza" aria-label="ひとつめの分数"></div>
+                </div>
+                <p id="calcSign" class="calc-sign"></p>
+                <div class="pizza-card">
+                    <p id="calcRightLabel" class="pizza-label"></p>
+                    <div id="calcRightPizza" class="pizza mini-pizza" aria-label="ふたつめの分数"></div>
+                </div>
+                <p class="calc-sign">=</p>
+                <div class="pizza-card">
+                    <p id="calcAnswerLabel" class="pizza-label">答えは？</p>
+                    <div id="calcResultPizza" class="pizza mini-pizza" aria-label="答えのピザ"></div>
+                </div>
+            </div>
+            <p id="calcResult" class="calc-result" aria-live="polite"></p>
+        </div>
+
+        <div id="calcChoices" class="mode-panel controls" aria-label="計算の答えの選択肢" hidden></div>
+
         <p id="quizHint" class="mode-panel hint">
             ポイント: <span class="fraction">1/2</span> はピザの半分。
             <span class="fraction">2/4</span> も、<span class="fraction">4/8</span> も、色のついた量は同じ半分です。
@@ -264,26 +323,42 @@ button:active{
         <p id="freeHint" class="mode-panel hint" hidden>
             ピザをひと切れずつタッチすると赤くなります。赤い数が分子、分けた数が分母です。
         </p>
+        <p id="calcHint" class="mode-panel hint" hidden>
+            たし算は赤いピザを合わせます。ひき算は左の赤いピザから、右の赤い分を取りのぞきます。
+        </p>
     </section>
 </main>
 
 <script>
 const quizModeButton = document.getElementById("quizModeButton");
 const freeModeButton = document.getElementById("freeModeButton");
+const calcModeButton = document.getElementById("calcModeButton");
 const quizMode = document.getElementById("quizMode");
 const freeMode = document.getElementById("freeMode");
+const calcMode = document.getElementById("calcMode");
 const targetPizza = document.getElementById("targetPizza");
 const answerPizza = document.getElementById("answerPizza");
 const freePizza = document.getElementById("freePizza");
+const calcLeftPizza = document.getElementById("calcLeftPizza");
+const calcRightPizza = document.getElementById("calcRightPizza");
+const calcResultPizza = document.getElementById("calcResultPizza");
 const question = document.getElementById("question");
 const choices = document.getElementById("choices");
 const partChoices = document.getElementById("partChoices");
+const calcChoices = document.getElementById("calcChoices");
 const msg = document.getElementById("msg");
 const answerLabel = document.getElementById("answerLabel");
 const freeSummary = document.getElementById("freeSummary");
 const resetFreeButton = document.getElementById("resetFreeButton");
 const quizHint = document.getElementById("quizHint");
 const freeHint = document.getElementById("freeHint");
+const calcHint = document.getElementById("calcHint");
+const calcProblem = document.getElementById("calcProblem");
+const calcLeftLabel = document.getElementById("calcLeftLabel");
+const calcRightLabel = document.getElementById("calcRightLabel");
+const calcAnswerLabel = document.getElementById("calcAnswerLabel");
+const calcSign = document.getElementById("calcSign");
+const calcResult = document.getElementById("calcResult");
 
 const questions = [
     { numerator:1, denominator:2, answers:[[2,4],[3,4],[1,4]] },
@@ -293,7 +368,25 @@ const questions = [
     { numerator:3, denominator:4, answers:[[6,8],[1,2],[2,4]] }
 ];
 
+const calcProblems = [
+    { left:[1,4], operator:"+", right:[2,4], answers:[[3,4],[2,4],[1,4]] },
+    { left:[1,2], operator:"+", right:[1,4], answers:[[3,4],[2,4],[1,4]] },
+    { left:[1,2], operator:"+", right:[1,3], answers:[[5,6],[2,6],[4,6]] },
+    { left:[1,3], operator:"+", right:[1,6], answers:[[1,2],[2,3],[1,6]] },
+    { left:[1,4], operator:"+", right:[1,8], answers:[[3,8],[2,8],[4,8]] },
+    { left:[1,6], operator:"+", right:[1,3], answers:[[1,2],[1,3],[2,6]] },
+    { left:[3,8], operator:"+", right:[2,8], answers:[[5,8],[4,8],[6,8]] },
+    { left:[3,4], operator:"-", right:[1,4], answers:[[2,4],[1,4],[4,4]] },
+    { left:[5,6], operator:"-", right:[1,3], answers:[[1,2],[4,6],[1,3]] },
+    { left:[3,4], operator:"-", right:[1,8], answers:[[5,8],[4,8],[6,8]] },
+    { left:[2,3], operator:"-", right:[1,6], answers:[[1,2],[1,3],[3,6]] },
+    { left:[7,8], operator:"-", right:[1,4], answers:[[5,8],[6,8],[3,8]] },
+    { left:[4,8], operator:"-", right:[1,8], answers:[[3,8],[2,8],[5,8]] },
+    { left:[3,4], operator:"-", right:[1,2], answers:[[1,4],[2,4],[3,8]] }
+];
+
 let currentQuestion = questions[0];
+let currentCalcProblem = calcProblems[0];
 let nextTimerId = 0;
 let freeParts = 4;
 let selectedSlices = new Set();
@@ -319,9 +412,31 @@ function fractionText(numerator, denominator){
     return `${numerator}/${denominator}`;
 }
 
+function lcm(left, right){
+    return Math.abs(left * right) / gcd(left, right);
+}
+
 function simplifiedText(numerator, denominator){
     const divisor = gcd(numerator, denominator);
     return fractionText(numerator / divisor, denominator / divisor);
+}
+
+function calculateProblem(problem){
+    const [leftNumerator, leftDenominator] = problem.left;
+    const [rightNumerator, rightDenominator] = problem.right;
+    const commonDenominator = lcm(leftDenominator, rightDenominator);
+    const leftCommonNumerator = leftNumerator * (commonDenominator / leftDenominator);
+    const rightCommonNumerator = rightNumerator * (commonDenominator / rightDenominator);
+    const resultNumerator = problem.operator === "+"
+        ? leftCommonNumerator + rightCommonNumerator
+        : leftCommonNumerator - rightCommonNumerator;
+
+    return {
+        commonDenominator,
+        leftCommonNumerator,
+        rightCommonNumerator,
+        resultNumerator
+    };
 }
 
 function drawPizza(pizzaElement, numerator, denominator){
@@ -376,14 +491,20 @@ function shuffle(items){
 
 function setMode(mode){
     const isQuiz = mode === "quiz";
+    const isFree = mode === "free";
+    const isCalc = mode === "calc";
 
     quizMode.hidden = !isQuiz;
     choices.hidden = !isQuiz;
     quizHint.hidden = !isQuiz;
-    freeMode.hidden = isQuiz;
-    freeHint.hidden = isQuiz;
+    freeMode.hidden = !isFree;
+    freeHint.hidden = !isFree;
+    calcMode.hidden = !isCalc;
+    calcChoices.hidden = !isCalc;
+    calcHint.hidden = !isCalc;
     quizModeButton.setAttribute("aria-selected", String(isQuiz));
-    freeModeButton.setAttribute("aria-selected", String(!isQuiz));
+    freeModeButton.setAttribute("aria-selected", String(isFree));
+    calcModeButton.setAttribute("aria-selected", String(isCalc));
 
     if(isQuiz){
         showQuestion();
@@ -392,7 +513,13 @@ function setMode(mode){
 
     window.clearTimeout(nextTimerId);
     msg.textContent = "";
-    updateFreePizza();
+
+    if(isFree){
+        updateFreePizza();
+        return;
+    }
+
+    showCalcQuestion();
 }
 
 function showQuestion(){
@@ -428,6 +555,54 @@ function updateFreePizza(){
     }
 
     freeSummary.textContent = `${freeParts}個のうち${selectedCount}個を選んだよ。分数は ${fractionText(selectedCount, freeParts)}、約分すると ${simplifiedText(selectedCount, freeParts)}。`;
+}
+
+function showCalcQuestion(){
+    window.clearTimeout(nextTimerId);
+    currentCalcProblem = calcProblems[Math.floor(Math.random() * calcProblems.length)];
+
+    const [leftNumerator, leftDenominator] = currentCalcProblem.left;
+    const [rightNumerator, rightDenominator] = currentCalcProblem.right;
+    const signText = currentCalcProblem.operator === "+" ? "+" : "-";
+
+    calcProblem.textContent = `${fractionText(leftNumerator, leftDenominator)} ${signText} ${fractionText(rightNumerator, rightDenominator)} はいくつ？`;
+    calcLeftLabel.textContent = fractionText(leftNumerator, leftDenominator);
+    calcRightLabel.textContent = fractionText(rightNumerator, rightDenominator);
+    calcAnswerLabel.textContent = "答えは？";
+    calcSign.textContent = signText;
+    calcResult.textContent = "";
+
+    drawPizza(calcLeftPizza, leftNumerator, leftDenominator);
+    drawPizza(calcRightPizza, rightNumerator, rightDenominator);
+    drawPizza(calcResultPizza, 0, calculateProblem(currentCalcProblem).commonDenominator);
+
+    const buttons = shuffle(currentCalcProblem.answers).map(([answerNumerator, answerDenominator]) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = fractionText(answerNumerator, answerDenominator);
+        button.addEventListener("click", () => answerCalc(answerNumerator, answerDenominator));
+        return button;
+    });
+
+    calcChoices.replaceChildren(...buttons);
+}
+
+function answerCalc(numerator, denominator){
+    const problem = currentCalcProblem;
+    const result = calculateProblem(problem);
+    const isCorrect = sameFraction(result.resultNumerator, result.commonDenominator, numerator, denominator);
+    const correctText = simplifiedText(result.resultNumerator, result.commonDenominator);
+
+    drawPizza(calcResultPizza, result.resultNumerator, result.commonDenominator);
+    calcAnswerLabel.textContent = `答え: ${correctText}`;
+
+    if(isCorrect){
+        calcResult.textContent = `正解！ 答えは ${correctText}。赤いピザの量を見れば分かるね。`;
+        nextTimerId = window.setTimeout(showCalcQuestion, 2200);
+        return;
+    }
+
+    calcResult.textContent = `もう一回！ 答えのピザの赤い量を見て考えてみよう。`;
 }
 
 function setFreeParts(parts){
@@ -478,6 +653,7 @@ function answer(numerator, denominator){
 
 quizModeButton.addEventListener("click", () => setMode("quiz"));
 freeModeButton.addEventListener("click", () => setMode("free"));
+calcModeButton.addEventListener("click", () => setMode("calc"));
 freePizza.addEventListener("click", toggleFreeSlice);
 freePizza.addEventListener("keydown", (event) => {
     if(event.key === "Enter" || event.key === " "){
@@ -511,3 +687,4 @@ updateFreePizza();
 </script>
 </body>
 </html>
+```
